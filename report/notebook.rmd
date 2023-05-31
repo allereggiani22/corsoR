@@ -6,6 +6,7 @@ output:
   pdf_document: default
 ---
 
+la parte seguente si chiama Chunk, è un pezzo di codice
 ```{r}
 source(here('R', 'librerie.R'))
 
