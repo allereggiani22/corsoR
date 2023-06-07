@@ -1,5 +1,6 @@
 source(here('R', 'librerie.R'))
 
+
 #library(readxl)
 titanic <- read_excel("dati/titanic.xlsx")
 #View(titanic) #righe ottenute facendo file/import dataset/excel e selezionando il file
@@ -15,7 +16,7 @@ glimpse(titanic) #utile perché dice anche se dato è raggruppato
 #notare come due colonne siano comprese tra virgolette o backend, meglio pulirle
 #names(titanic)
 
-clean_names(titanic) #pulisce nomi mettendo tutto in minuscolo e sostituendo spazi con _
+clean_names(titanic) #pulisce nomi mettendo tutto in minuscolo e sostituendo spazi con _ %>% 
 view(titanic)
 
 titanic <- clean_names(titanic)
@@ -98,7 +99,7 @@ summarise(dtgrouped, surv = mean(survived))
 #posso vedere ogni singolo passaggio dando %>% glimpse/view
 
 titanic <- read_excel("dati/titanic.xlsx")
-titanic <- clean_names(titani)
+titanic <- clean_names(titanic)
 
 titanic %>%
   clean_names() %>% 
@@ -109,12 +110,12 @@ titanic %>%
          age = as.numeric(age),
          sex = if_else(sex %in% c("Male", "male_"), "male", sex),
          across (c("sex", "embarked", "pclass"), as.factor)) %>%
-  group_by(pclass, sex) %>%
-  summarise(Surv = round(mean(survived), 2), #media sei sopravvissuti perché è 0/1
-            n= n()) %>% 
-  mutate(Surv = paste0(Surv, " ", "(", n, ")")) %>%
-  select (-n) %>%
-  pivot_wider(names_from = "sex", values_from = "Surv") %>% view()
+  group_by(pclass, sex) %>% view()
+  # summarise(Surv = round(mean(survived), 2), #media dei sopravvissuti perché è 0/1
+  #           n= n()) %>% 
+  # mutate(Surv = paste0(Surv, " ", "(", n, ")")) %>%
+  # select (-n) %>%
+  # pivot_wider(names_from = "sex", values_from = "Surv") %>% view()
 
 #Ctrl+Shift+C per commentare blocco di righe
 
@@ -137,10 +138,10 @@ who %>%
  separate(key, c("new", "type", "sexage")) %>%
   select(-new, -iso2, -iso3) %>% 
   separate(sexage, c("sex", "age"), sep = 1) %>%
-  group_by(country, year) %>%
-  summarise(totcasi = sum(cases)) %>%
-  arrange(year) %>% 
-  pivot_wider(names_from = "year", values_from = "totcasi", values_fill = 0) %>% view()
+  group_by(country, year) %>% view()
+  # summarise(totcasi = sum(cases)) %>%
+  # arrange(year) %>%
+  # pivot_wider(names_from = "year", values_from = "totcasi", values_fill = 0) %>% view()
   #values_fill sostituisce con 0 gli NA
 
 

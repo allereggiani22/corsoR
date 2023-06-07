@@ -1,3 +1,5 @@
+source(here('R', 'librerie.R'))
+
 #readr, tidyr, dplyr, ggplot2 sono insieme di pacchetti del tidyverse
 #in tidy, ogni variabile ha una colonna, ogni informazione è una riga, 
 #ogni cella è una singola misura
@@ -60,6 +62,56 @@ table4a %>%
 
 covid <- read.csv("C:/Users/alessandro.reggiani/OneDrive - Istituto Zooprofilattico Sperimentale L. E/Desktop/Git projects/corsoR/dati/Dati_Covid_19.csv")
 
+covid <- clean_names(covid)
 glimpse(covid)
 #attenzione che nconf è univoco solo finché associato all'anno
+
+
+#tot esami eseguiti per anno
+covid %>% 
+  group_by(anno) %>% 
+  summarise(esami = sum(tot_eseguiti, na.rm = T)) %>% view()
+
+#tot esami eseguiti per reparto
+covid %>% 
+  group_by(reparto) %>% 
+  summarise(esami = sum(tot_eseguiti, na.rm = T)) %>% view()
+
+
+#tot esami esegguiti per anno e reparto
+covid %>% 
+  group_by(anno,reparto) %>% 
+  summarise(esami = sum(tot_eseguiti, na.rm = T)) %>% view
+
+#per fare pivot_wider i nomi devono essere caratteri
+covid %>% 
+  mutate(anno = as.character(anno)) %>% 
+  group_by(anno, reparto) %>% 
+  summarise(esami = sum(tot_eseguiti, na.rm=T))%>%
+  pivot_wider(names_from = "anno", values_from = "esami") %>% view()
+
+#tot esami eseguiti per provincia
+covid %>% 
+  group_by(provincia) %>% 
+  summarise(esami = sum(tot_eseguiti, na.rm = T)) %>% view()
+
+#numero esami per prova ed anno
+tab1 <- covid %>% 
+  mutate(anno = as.character(anno)) %>% 
+  group_by(anno, prova) %>% 
+  summarise(esami = sum(tot_eseguiti, na.rm=T))%>%
+  pivot_wider(names_from = "anno", values_from = "esami")
+
+rowSums(tab1[1,-1], na.rm=T) #somma esami prova sars-cov-2 1295363
+
+#numero di esami prova "SARS-CoV-2: agente eziologico" per reparto ed anno
+tab2 <- covid %>% 
+  filter(prova == "SARS-CoV-2: agente eziologico") %>% 
+  mutate(anno = as.character(anno)) %>% 
+  group_by(anno,reparto) %>% 
+  summarise(esami = sum(tot_eseguiti, na.rm = T)) %>% 
+  pivot_wider(names_from = "anno", values_from = "esami") %>% view()
+
+sum(tab2[,-1], na.rm= T) #somma esami prova Sars-cov-2 1295363
+
 
