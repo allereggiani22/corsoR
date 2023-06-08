@@ -115,3 +115,36 @@ tab2 <- covid %>%
 sum(tab2[,-1], na.rm= T) #somma esami prova Sars-cov-2 1295363
 
 
+#numero di esami per materiale
+unique(covid$materiale)
+
+covid %>% mutate(materiale = replace(materiale, materiale %in% c("TAMPONE ", "TAMPOE", "TAMPONI"), "TAMPONE"),
+                 materiale = replace(materiale, materiale %in% c("SALIVA ", "SALIVARI"), "SALIVA"),
+                 materiale = replace(materiale, materiale %in% "RNA", "RNA SARS-CoV-2"),
+                 materiale = replace(materiale, materiale %in% "materiale vari", "ALTRI MATERIALI"),
+                 materiale = replace(materiale, materiale %in% "espettorato", "ESPETTORATO")) %>%
+          group_by(materiale) %>% 
+          summarise(esami = sum(tot_eseguiti, na.rm = T)) %>%
+          pivot_wider(names_from = "materiale", values_from = "esami") #fino qui per esami/materiale
+      # %>% names() così mi elenca i diversi materiali, che sono 7
+
+#numero dei comuni
+names(covid)
+unique(covid$comune)
+NA %in% unique(covid$comune)
+length(unique(covid$comune)) 
+
+#numero di conferenti
+unique(covid$conferente)
+NA %in% unique(covid$conferente)
+length(unique(covid$conferente))
+
+#numero di esami per anno e per conferente
+covid %>% 
+  mutate(anno = as.character(anno)) %>% 
+  group_by(anno, conferente) %>% 
+  summarise(esami = sum(tot_eseguiti, na.rm=T))%>%
+  pivot_wider(names_from = "anno", values_from = "esami") %>% view()
+
+
+
