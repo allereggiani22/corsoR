@@ -146,9 +146,171 @@ who %>%
 
 
 
+# Data visualization - Grafici --------------------------------------------
+
+#useremo ggplot2, pacchetto forse più vecchio del tidyverse
+#implementa idea di "grammatica della grafica", una sorta di regolamento per fare grafici
+# a graphic maps data to the aesthetic attributes (colour, shape, size) of geometric objects
+#(points, lines, bars).
+#grafici vengono fatti a strati, aggiungendo strati con un +
+#ggplot(dati) [oppure dati %>% ggplot() +...] + aes(x,y..) + geom_...(aes(...)) + facet_...(...~...) + theme(...)
+#I dati devono essere in formato long
+
+#c'è anche pacchetto patchwork che serve per aggregare elementi differenti
+
+
+
+mouse <- read_excel("dati/SPERIMENTAZIONE prova132.xlsx", 
+                                       range = "A2:T22", col_types = c("text", 
+                                                                       "numeric", "numeric", "numeric", 
+                                                                       "numeric", "numeric", "numeric", 
+                                                                       "numeric", "numeric", "numeric", 
+                                                                       "numeric", "numeric", "numeric", 
+                                                                       "numeric", "numeric", "numeric", 
+                                                                       "numeric", "numeric", "skip", "skip"))
+view(mouse)
+
+#prima cosa è togliere le righe vuote
+
+dt <- mouse %>% 
+  filter(!row_number() %in% c(1,3,7,11,16)) %>% 
+  mutate(...1 = if_else(is.na(...1),"idmouse", ...1)) %>%
+  row_to_names(row_number = 1) %>% 
+  pivot_longer(2:18, names_to = "days", values_to = "weight") %>% 
+  mutate(gruppi = ifelse(str_detect(idmouse, "1",), "A",
+                         ifelse(str_detect(idmouse, "2",),"B",
+                                ifelse(str_detect(idmouse, "3",),"C", "Controllo"))))
+
+view(dt)
+p <- ggplot(dt) +
+  aes(x = weight) +
+  #geom_point()
+   #geom_jitter(height=0.3) +  #li distribuisce in verticale senza particolare senso, posso allargare o stringere ma non ha valenza, utile per vedere se ci sono addensamenti in certe aree della scala
+  # geom_histogram(aes(y=..density..), bins = 20, col="blue", fill="lightgrey") + #bins per modificare numero di barre
+  # geom_rug()
+  # geom_density(adjust= 1/3)
+  
+  # geom_boxplot(aes(y=""), color = "navy", fill = "lightblue", width =0.3) + 
+  # geom_jitter(aes(y=""), height = 0.2,
+  #             color = ifelse(dt$weight== max(dt$weight, na.rm = T), "red",
+  #                             ifelse(dt$weight== min(dt$weight, na.rm = T), "blue","black"))) #gli faccio colorare massimo e minimo differenti
+  
+  geom_violin(aes(y=""), scale="width")+
+  geom_hline(yintercept = 1) + #evidenzia come violin plot deriva da density curve
+  ggforce::geom_sina(aes(y="")) +
+  geom_boxplot(aes(y=""), width=0.2)
+ 
+
+dt <- dt %>% mutate(days = as.numeric(days))
+dt <- dt %>% mutate(days = as.factor(days))
+
+
+p1 <- ggplot(dt)+
+  aes(x=days, y=weight)+
+  geom_point()+
+  geom_line() #queste linee sono per giorno, ma non mi interessano... le voglio per singolo topo nel tempo
+
+p2 <- ggplot(dt)+
+  aes(x=days, y=weight, col=gruppi)+
+  geom_point() +
+  geom_line(aes(group = idmouse)) # mancano osservazioni ai giorni 4 e 11 perché domeniche. potrei toglierle o inserire medie dei gironi prima e dopo
+
+
+# voglio fare pannelli per avere sia punti che linee per andamento tra i vari gruppi
+
+p3 <- ggplot(dt)+
+  aes(x=days, y=weight, col=gruppi)+
+  geom_point() +
+  geom_line(aes(group = idmouse)) + 
+  facet_wrap(.~gruppi)
+
+p4 <- ggplot(dt)+
+  aes(x=days, y=weight, col=gruppi)+
+  geom_point() +
+  geom_line(aes(group = idmouse)) + 
+  facet_wrap(.~gruppi)+
+  theme(legend.position = "none")
+
+p5 <- ggplot(dt)+
+  aes(x= as.numeric(days), y=weight, col=gruppi)+ #devo dargli i giorni come numeri per fare la regressione lineare!
+  geom_point( alpha = 0.2) +
+  geom_line(aes(group = idmouse), alpha = 0.2) + #alpha è per trasparenza
+  facet_wrap(.~gruppi, scales = "free")+
+  geom_smooth(se = F, method = "lm") + #lm è linear model, ma non gli faccio mettere l'errore standard che avrebbe di default
+  theme(legend.position = "none")
+  
+#tolgo i pannelli per confrontare le pendenze delle curve
+  
+p6 <- ggplot(dt)+
+  aes(x= as.numeric(days), y=weight, col=gruppi)+ #devo dargli i giorni come numeri per fare la regressione lineare!
+  geom_point( alpha = 0.2) +
+  #geom_line(aes(group = idmouse), alpha = 0.2) + #alpha è per trasparenza
+  #facet_wrap(.~gruppi, scales = "free")+
+  geom_smooth(se = F, method = "lm") + #lm è linear model, ma non gli faccio mettere l'errore standard che avrebbe di default
+theme(legend.position = "bottom")
+
+p7 <- ggplot(dt)+
+  aes(x= as.numeric(days), y=weight, col=gruppi)+ #devo dargli i giorni come numeri per fare la regressione lineare!
+  #geom_point( alpha = 0.2) +
+  #geom_line(aes(group = idmouse), alpha = 0.2) + #alpha è per trasparenza
+  #facet_wrap(.~gruppi, scales = "free")+
+  geom_smooth(se = F, method = "lm") + #lm è linear model, ma non gli faccio mettere l'errore standard che avrebbe di default
+  theme(legend.position = "bottom")
+
+library(patchwork)
+
+((p1+p2)/
+    (p5+p6))|p7
+
+
+p8 <- p7 +
+  labs(
+    title = "Effetto della dieta sull'accrescimento dei topi neonati",
+    subtitle = "confronto tra quattro tipi di diete",
+    caption = "le linee rappresentano le rette di regressione del peso nei giorni di osservszione per i differenti gruppi di dieta",
+    y = "Weight (gr)",
+    x = "Days")+
+  xlim(0,max(as.numeric(dt$days)))+
+  ylim(0,max(as.numeric(dt$days)))+
+  scale_x_continuous(breaks = c(1:17))+
+  theme_bw() + 
+  
+  #modificare gli elementi del testo
+  
+  theme(
+    plot.title = element_text(colour = "blue", size = 18),
+    plot.subtitle = element_text(size = 16),
+    legend.title = element_blank(),
+    axis.title.x = element_text(size = 15),
+    axis.title.y = element_text(size = 15),
+    axis.text = element_text(size=14))
+
+
+gruppi <- c(A= "Gruppo A: Dieta iperproteica",
+            B= "Gruppo B: Dieta ipoproteica",
+            C= "Gruppo C: Dieta ipoproteica + intergatore",
+            Controllo = "Gruppo di controllo: dieta normoproteica")
+
+p9 <- ggplot(dt)+
+  aes(x= as.numeric(days), y=weight, col=gruppi)+ #devo dargli i giorni come numeri per fare la regressione lineare!
+  geom_point( alpha = 0.2) +
+  geom_line(aes(group = idmouse), alpha = 0.2) + #alpha è per trasparenza
+  facet_wrap(.~gruppi, scales = "free", labeller = labeller(gruppi = gruppi))+ #non funziona labeller, forse sintassi sbagliata
+  geom_smooth(se = F, method = "lm") + #lm è linear model, ma non gli faccio mettere l'errore standard che avrebbe di default
+  theme(legend.position = "none")
+  
+#r-graph-gallery.com
 
 
 
 
 
 
+
+
+
+
+
+
+
+  

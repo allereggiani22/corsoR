@@ -88,7 +88,7 @@ covid %>%
   mutate(anno = as.character(anno)) %>% 
   group_by(anno, reparto) %>% 
   summarise(esami = sum(tot_eseguiti, na.rm=T))%>%
-  pivot_wider(names_from = "anno", values_from = "esami") %>% view()
+  pivot_wider(names_from = "anno", values_from = "esami") %>% view() #attenzione perché ggplot vuole solo formato long
 
 #tot esami eseguiti per provincia
 covid %>% 
@@ -110,7 +110,7 @@ tab2 <- covid %>%
   mutate(anno = as.character(anno)) %>% 
   group_by(anno,reparto) %>% 
   summarise(esami = sum(tot_eseguiti, na.rm = T)) %>% 
-  pivot_wider(names_from = "anno", values_from = "esami") %>% view()
+  pivot_wider(names_from = "anno", values_from = "esami", values_fill = 0) %>% view()
 
 sum(tab2[,-1], na.rm= T) #somma esami prova Sars-cov-2 1295363
 
@@ -127,6 +127,16 @@ covid %>% mutate(materiale = replace(materiale, materiale %in% c("TAMPONE ", "TA
           summarise(esami = sum(tot_eseguiti, na.rm = T)) %>%
           pivot_wider(names_from = "materiale", values_from = "esami") #fino qui per esami/materiale
       # %>% names() così mi elenca i diversi materiali, che sono 7
+
+#altro modo di farlo è concatenare if else, aggiungendo condizioni... va sistemato
+covid %>% mutate(materiale = if_else(materiale %in% c("TAMPONE ", "TAMPOE", "TAMPONI"), "TAMPONE",
+                                     if_else(materiale %in% c("SALIVA ", "SALIVARI"), "SALIVA",
+                                             if_else(materiale %in% "RNA", "RNA SARS-CoV-2",
+                                                     if_else(materiale %in% "materiale vari", "ALTRI MATERIALI",
+                                                             if_else(materiale %in% "espettorato", "ESPETTORATO")))),materiale)) %>%
+                   group_by(materiale) %>% 
+                   summarise(esami = sum(tot_eseguiti, na.rm = T))
+
 
 #numero dei comuni
 names(covid)
@@ -145,6 +155,3 @@ covid %>%
   group_by(anno, conferente) %>% 
   summarise(esami = sum(tot_eseguiti, na.rm=T))%>%
   pivot_wider(names_from = "anno", values_from = "esami") %>% view()
-
-
-
